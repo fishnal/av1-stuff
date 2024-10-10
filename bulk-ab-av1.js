@@ -26,7 +26,7 @@ function kebabCaseToCamelCase(s) {
  * @param {ProgramOptsDefns} programOptDefns
  */
 function printHelp(programOptDefns) {
-	let help = `Usage: node bulk-ab-av1.js [options] <ab-av1 command> [ab-av1 options]\n`;
+	let help = `Usage: node bulk-ab-av1.js f[options] <ab-av1 command> [ab-av1 options]\n`;
 
 	for (let optDefn of programOptDefns) {
 		help += '    ';
@@ -60,7 +60,10 @@ function parseCLIArgs() {
 			description: 'Path to a file with line-separated filepaths of videos to process' },
 		{ name: 'output-dir', alias: 'od', dependencies: [ 'rel-dir' ],
 			description: 'Output directory for files. If omitted, then generated files are created in their original directory with "file.av1.ext"' },
-		// TODO might change this into "input-dir"
+		// TODO Might add an input-dir option, and optionally a recursive option, that can replace the
+		// file-list option.
+		// In the case where an input-dir is provided, the rel-dir is default the input-dir itself, but
+		// can still be provided.
 		{ name: 'rel-dir', alias: 'rd', dependencies: [ 'output-dir' ],
 			description: "Relative directory. Determines an output file's directory structure relative from rel-dir to the input file's directory" }
 	];
@@ -227,6 +230,15 @@ function printDivider() {
 					return;
 				}
 
+				// TODO pass a writable stream to stderr that will
+				// (a) write to process.stderr directly, and
+				// (b) write to StreamLineParser, so stderr lines can be analyzed
+				// Analyzing the error lines can tell us information such as
+				// "Error: Failed to find a suitable crf" when crf-searching
+				// In this specific case, we can either lower the min-vmaf and/or lower the preset
+				// Though, lowering the min-vmaf is probably faster
+				// Can also extract info such as which CRF it last failed on, what the VMAF was for that CRF, and
+				// the predicted video size
 				console.log(`Spawning ab-av1 ${spawnArgs.join(' ')}`);
 				let task = spawn('ab-av1', spawnArgs, {
 					signal: abortController.signal,
@@ -251,7 +263,7 @@ function printDivider() {
 		});
 
 		await spawnPromise
-			.catch(err => console.error(`Failed to process ${videoFile}: `, JSON.stringify(err)));
+			.catch(err => console.error(`Failed to process ${videoFile}: `, JSON.stringify(err)))
 			.finally(() => process.removeListener('SIGINT', handleSIGINT));
 	}
 })().catch(err => {
