@@ -250,7 +250,9 @@ function printDivider() {
 			}
 		});
 
-		await spawnPromise.finally(() => process.removeListener('SIGINT', handleSIGINT));
+		await spawnPromise
+			.catch(err => console.error(`Failed to process ${videoFile}: `, JSON.stringify(err)));
+			.finally(() => process.removeListener('SIGINT', handleSIGINT));
 	}
 })().catch(err => {
 	console.error(err);
