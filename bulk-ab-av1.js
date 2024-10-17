@@ -219,6 +219,7 @@ function printDivider() {
 						// output option is optional for these commands, so only specify it
 						// if --output-dir was provided
 						if (opts.outputDir != null) {
+							fs.mkdirSync(path.dirname(av1OutputFilepath), {recursive: true});
 							spawnArgs.push('-o', av1OutputFilepath);
 						}
 						break;
